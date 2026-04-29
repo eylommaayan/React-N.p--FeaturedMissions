@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// רישום הפלאגין (חובה בצד הלקוח)
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -48,33 +47,53 @@ export default function FeaturedMissions() {
   const missionsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // יצירת הקשר ל-GSAP
+    // כל לוגיקת ה-GSAP חייבת להיות כאן בפנים
     const ctx = gsap.context(() => {
-      // 1. "נעילת" הרקע (הטקסט הענק) במקום
+      // 1. נעילת הרקע
       ScrollTrigger.create({
         trigger: mainSectionRef.current,
-        start: "top top", // כשהחלק העליון של הסקשן מגיע לראש המסך
-        end: "bottom bottom", // כשהחלק התחתון שלו יוצא
-        pin: textBackgroundRef.current, // האלמנט שיינעל
-        pinSpacing: false, // מונע מ-GSAP להוסיף רווח מיותר
+        start: "top top",
+        end: "bottom bottom",
+        pin: textBackgroundRef.current,
+        pinSpacing: false,
       });
 
-      // 2. הזזת רשימת המשימות מעל הרקע הנעול
-      // אין צורך ב-GSAP כאן, הגלילה הטבעית עושה את זה
-      // אבל אנחנו צריכים לוודא שיש מספיק גובה לגלילה
-      const totalHeight = MISSIONS.length * window.innerHeight * 1.2; // גובה הגלילה
+      // 2. אנימציית ה-Reveal לכל כרטיס
+      const cards = gsap.utils.toArray(".mission-card") as HTMLElement[];
+      cards.forEach((card) => {
+        const box = card.querySelector(".mission-box");
+        if (box) {
+          gsap.fromTo(
+            box,
+            { opacity: 0, y: 100, scale: 0.9 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              scrollTrigger: {
+                trigger: card,
+                start: "top 80%",
+                end: "top 20%",
+                scrub: true,
+              },
+            },
+          );
+        }
+      });
+
+      // 3. הגדרת גובה הגלילה
+      const totalHeight = MISSIONS.length * window.innerHeight * 1.2;
       gsap.set(missionsListRef.current, { height: totalHeight });
     }, mainSectionRef);
 
     return () => ctx.revert();
   }, []);
 
-  // סגנונות Inline למבנה
+  // סגנונות
   const mainSectionStyle: React.CSSProperties = {
     width: "100%",
     position: "relative",
-    overflow: "hidden", // מונע בריחת תוכן
-    backgroundColor: "#111", // צבע הרקע הכהה
+    backgroundColor: "#111",
   };
 
   const backgroundTextStyle: React.CSSProperties = {
@@ -82,82 +101,68 @@ export default function FeaturedMissions() {
     top: 0,
     left: 0,
     width: "100%",
-    height: "100vh", // גובה המסך
+    height: "100vh",
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    textAlign: "center",
-    zIndex: 1, // שכבה אחורית
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: "clamp(5rem, 20vw, 15rem)", // טקסט ענק כמו במקור
-    fontWeight: "900",
-    color: "#e6e6e6", // הצבע הבהיר מהתמונה
-    lineHeight: "0.85",
-    textTransform: "uppercase",
-    margin: 0,
+    zIndex: 1,
   };
 
   return (
-    <section
-      ref={mainSectionRef}
-      style={mainSectionStyle}
-      className="featured-missions"
-    >
-      {/* 1. שכבת הרקע הסטטית (הטקסט הענק) */}
+    <section ref={mainSectionRef} style={mainSectionStyle}>
       <div ref={textBackgroundRef} style={backgroundTextStyle}>
-        <h1 style={titleStyle}>
+        <h1
+          style={{
+            fontSize: "clamp(5rem, 20vw, 15rem)",
+            fontWeight: "900",
+            color: "#e6e6e6",
+            textAlign: "center",
+            lineHeight: "0.85",
+          }}
+        >
           HIGHLIGHTED <br /> MISSIONS
         </h1>
       </div>
 
-      {/* 2. שכבת התוכן הנעה (הכרטיסים) */}
       <div
         ref={missionsListRef}
         style={{ width: "100%", position: "relative", zIndex: 2 }}
       >
-        {/* רווח התחלתי כדי שהכרטיסים יופיעו רק כשמגוללים */}
-        <div style={{ height: "100vh" }}></div>
-
+        <div style={{ height: "100vh" }}></div> {/* רווח התחלתי */}
         {MISSIONS.map((mission) => (
           <div
             key={mission.id}
             className="mission-card"
             style={{
-              height: "100vh", // כל כרטיס תופס מסך מלא
+              height: "100vh",
               width: "100%",
               display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
               justifyContent: "center",
-              position: "relative", // חשוב: הם זזים בגלילה טבעית
-              backgroundColor: "transparent", // שקופים כדי לראות את הטקסט מאחור
+              alignItems: "center",
             }}
           >
-            {/* תוכן הכרטיס (המלבן האפור) */}
+            {/* הוספתי את הקלאס mission-box שחיפשנו באנימציה */}
             <div
-              style={{
-                width: "90%",
-                maxWidth: "800px",
-                textAlign: "center",
-                marginTop: "100px", // הזזה למטה כמו בצילום
-              }}
+              className="mission-box"
+              style={{ width: "90%", maxWidth: "800px", textAlign: "center" }}
             >
-              <p style={{ color: "#000", fontWeight: "600" }}>
+              <p
+                style={{
+                  color: "#fff",
+                  fontWeight: "600",
+                  marginBottom: "10px",
+                }}
+              >
                 {mission.id} / 05
               </p>
-
               <div
                 style={{
                   width: "100%",
                   height: "500px",
-                  backgroundColor: "#939387", // המלבן האפור המפורסם
+                  backgroundColor: "#939387",
                   borderRadius: "32px",
                   overflow: "hidden",
-                  position: "relative",
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.6)", // צל כבד להדגשת השכבות
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
                 }}
               >
                 <img
@@ -166,6 +171,9 @@ export default function FeaturedMissions() {
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>
+              <p style={{ color: "#fff", marginTop: "20px", opacity: 0.7 }}>
+                [ {mission.label} ]
+              </p>
             </div>
           </div>
         ))}
